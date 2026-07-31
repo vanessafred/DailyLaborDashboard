@@ -1,0 +1,977 @@
+<title>Labor Dashboard — Austin Proper Hotel</title>
+<style>
+/* ── Tokens ───────────────────────────────────────────────── */
+:root {
+  --surface:        #f5f3ef;
+  --surface-card:   #ffffff;
+  --surface-inset:  #ede9e3;
+  --ink-1:          #18160f;
+  --ink-2:          #5a5549;
+  --ink-3:          #918d84;
+  --rule:           #dedad2;
+  --rule-strong:    #c4bfb4;
+  --accent:         #b5801a;   /* hotel gold */
+
+  /* chart series */
+  --c-actual:       #2a78d6;
+  --c-budget:       #eb6834;
+  --c-forecast:     #1baf7a;
+
+  /* status */
+  --good:           #1a7a1a;
+  --good-bg:        #e8f5e8;
+  --bad:            #b63030;
+  --bad-bg:         #fbeaea;
+  --warn:           #8f6000;
+  --warn-bg:        #fdf3dc;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    --surface:       #1a1915;
+    --surface-card:  #22201a;
+    --surface-inset: #2c2921;
+    --ink-1:         #f0edde;
+    --ink-2:         #b8b2a2;
+    --ink-3:         #7a7468;
+    --rule:          #332f27;
+    --rule-strong:   #4a4539;
+    --accent:        #d4982a;
+    --c-actual:      #3987e5;
+    --c-budget:      #d95926;
+    --c-forecast:    #199e70;
+    --good:          #3aaa3a;
+    --good-bg:       #0f2e0f;
+    --bad:           #e06060;
+    --bad-bg:        #2e0f0f;
+    --warn:          #d4982a;
+    --warn-bg:       #2e2008;
+  }
+}
+:root[data-theme="dark"] {
+  --surface:       #1a1915;
+  --surface-card:  #22201a;
+  --surface-inset: #2c2921;
+  --ink-1:         #f0edde;
+  --ink-2:         #b8b2a2;
+  --ink-3:         #7a7468;
+  --rule:          #332f27;
+  --rule-strong:   #4a4539;
+  --accent:        #d4982a;
+  --c-actual:      #3987e5;
+  --c-budget:      #d95926;
+  --c-forecast:    #199e70;
+  --good:          #3aaa3a;
+  --good-bg:       #0f2e0f;
+  --bad:           #e06060;
+  --bad-bg:        #2e0f0f;
+  --warn:          #d4982a;
+  --warn-bg:       #2e2008;
+}
+:root[data-theme="light"] {
+  --surface:        #f5f3ef;
+  --surface-card:   #ffffff;
+  --surface-inset:  #ede9e3;
+  --ink-1:          #18160f;
+  --ink-2:          #5a5549;
+  --ink-3:          #918d84;
+  --rule:           #dedad2;
+  --rule-strong:    #c4bfb4;
+  --accent:         #b5801a;
+  --c-actual:       #2a78d6;
+  --c-budget:       #eb6834;
+  --c-forecast:     #1baf7a;
+  --good:           #1a7a1a;
+  --good-bg:        #e8f5e8;
+  --bad:            #b63030;
+  --bad-bg:         #fbeaea;
+  --warn:           #8f6000;
+  --warn-bg:        #fdf3dc;
+}
+
+/* ── Reset & Base ─────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: var(--surface);
+  color: var(--ink-1);
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* ── Topbar ────────────────────────────────────────────────── */
+.topbar {
+  background: var(--surface-card);
+  border-bottom: 1px solid var(--rule);
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 52px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.topbar-left {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+.hotel-name {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.page-title {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--ink-2);
+}
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.data-note {
+  font-size: 11px;
+  color: var(--ink-3);
+}
+.theme-btn {
+  background: none;
+  border: 1px solid var(--rule-strong);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 12px;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.theme-btn:hover { background: var(--surface-inset); }
+
+/* ── Main layout ───────────────────────────────────────────── */
+.main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px 24px 40px;
+}
+
+/* ── Month tabs ────────────────────────────────────────────── */
+.month-bar {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 20px;
+  background: var(--surface-inset);
+  border-radius: 10px;
+  padding: 3px;
+  width: fit-content;
+}
+.month-tab {
+  padding: 5px 14px;
+  border-radius: 8px;
+  border: none;
+  background: none;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.month-tab:hover { background: var(--surface-card); color: var(--ink-1); }
+.month-tab.active {
+  background: var(--surface-card);
+  color: var(--ink-1);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.month-tab.future { color: var(--ink-3); }
+.month-tab.future:hover { background: none; cursor: default; }
+
+/* ── KPI row ───────────────────────────────────────────────── */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.kpi-card {
+  background: var(--surface-card);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  padding: 16px 18px;
+  position: relative;
+  overflow: hidden;
+}
+.kpi-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 3px;
+  border-radius: 0 0 10px 10px;
+}
+.kpi-card.neutral::after { background: var(--rule-strong); }
+.kpi-card.over-budget::after { background: var(--bad); }
+.kpi-card.under-budget::after { background: var(--good); }
+.kpi-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-bottom: 6px;
+}
+.kpi-value {
+  font-size: 32px;
+  font-weight: 300;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  color: var(--ink-1);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.kpi-sub {
+  font-size: 12px;
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+.kpi-dot {
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  margin-right: 5px;
+  vertical-align: middle;
+}
+
+/* ── Charts row ────────────────────────────────────────────── */
+.charts-row {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 12px;
+  margin-bottom: 16px;
+  align-items: start;
+}
+.chart-card {
+  background: var(--surface-card);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  padding: 16px 18px;
+  overflow: hidden;
+}
+.chart-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.chart-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-1);
+}
+.legend {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+.legend-line {
+  display: inline-block;
+  width: 16px;
+  height: 2px;
+  border-radius: 1px;
+}
+.legend-dash {
+  display: inline-block;
+  width: 16px;
+  height: 2px;
+  background: repeating-linear-gradient(
+    90deg,
+    currentColor 0, currentColor 4px,
+    transparent 4px, transparent 7px
+  );
+  border-radius: 1px;
+}
+
+/* ── SVG chart containers ──────────────────────────────────── */
+.svg-wrap {
+  width: 100%;
+  position: relative;
+}
+.svg-wrap svg {
+  width: 100%;
+  display: block;
+}
+.chart-tooltip {
+  position: absolute;
+  background: var(--surface-card);
+  border: 1px solid var(--rule-strong);
+  border-radius: 8px;
+  padding: 8px 11px;
+  font-size: 12px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.1s;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  z-index: 50;
+  font-variant-numeric: tabular-nums;
+}
+.tt-date { font-weight: 600; color: var(--ink-1); margin-bottom: 4px; font-size: 11px; }
+.tt-row { display: flex; gap: 8px; align-items: center; color: var(--ink-2); margin-top: 2px; }
+.tt-swatch { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.tt-val { margin-left: auto; font-weight: 600; color: var(--ink-1); }
+
+/* ── Dept table ────────────────────────────────────────────── */
+.table-card {
+  background: var(--surface-card);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.table-card-header {
+  padding: 14px 18px 12px;
+  border-bottom: 1px solid var(--rule);
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.table-card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-1);
+}
+.table-note {
+  font-size: 11px;
+  color: var(--ink-3);
+}
+.dept-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+.dept-table th {
+  padding: 8px 12px;
+  text-align: right;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  border-bottom: 1px solid var(--rule);
+  background: var(--surface-inset);
+  white-space: nowrap;
+}
+.dept-table th:first-child { text-align: left; }
+.dept-table td {
+  padding: 11px 12px;
+  text-align: right;
+  font-size: 13px;
+  color: var(--ink-1);
+  border-bottom: 1px solid var(--rule);
+}
+.dept-table tr:last-child td { border-bottom: none; }
+.dept-table td:first-child {
+  text-align: left;
+  font-weight: 500;
+}
+.dept-table tr:hover td {
+  background: var(--surface-inset);
+}
+.var-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.var-over  { background: var(--bad-bg);  color: var(--bad);  }
+.var-under { background: var(--good-bg); color: var(--good); }
+.var-flat  { background: var(--surface-inset); color: var(--ink-2); }
+.bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.bar-track {
+  flex: 1;
+  height: 4px;
+  background: var(--surface-inset);
+  border-radius: 2px;
+  overflow: hidden;
+  min-width: 60px;
+}
+.bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: var(--c-actual);
+}
+.no-budget { color: var(--ink-3); font-style: italic; }
+
+/* ── Footer note ───────────────────────────────────────────── */
+.footer-note {
+  margin-top: 16px;
+  font-size: 11px;
+  color: var(--ink-3);
+  line-height: 1.6;
+}
+
+@media (max-width: 900px) {
+  .charts-row { grid-template-columns: 1fr; }
+  .kpi-row { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 560px) {
+  .kpi-row { grid-template-columns: 1fr 1fr; }
+  .main { padding: 12px 14px 32px; }
+}
+</style>
+
+<!-- Top bar -->
+<div class="topbar">
+  <div class="topbar-left">
+    <span class="hotel-name">Austin Proper Hotel</span>
+    <span class="page-title">Labor Dashboard</span>
+  </div>
+  <div class="topbar-right">
+    <span class="data-note" id="lastUpdated"></span>
+    <button class="theme-btn" onclick="toggleTheme()">Toggle theme</button>
+  </div>
+</div>
+
+<!-- Main content -->
+<div class="main">
+  <!-- Month selector -->
+  <div class="month-bar" id="monthBar"></div>
+
+  <!-- KPI cards -->
+  <div class="kpi-row" id="kpiRow"></div>
+
+  <!-- Charts -->
+  <div class="charts-row">
+    <div class="chart-card">
+      <div class="chart-header">
+        <span class="chart-title" id="dailyChartTitle">Daily Hours</span>
+        <div class="legend">
+          <div class="legend-item">
+            <span class="legend-line" style="background:var(--c-actual)"></span> Actual
+          </div>
+          <div class="legend-item">
+            <span class="legend-dash" style="color:var(--c-budget)"></span> Budget/day
+          </div>
+          <div class="legend-item">
+            <span class="legend-dash" style="color:var(--c-forecast)"></span> Forecast/day
+          </div>
+        </div>
+      </div>
+      <div class="svg-wrap" id="dailyChartWrap">
+        <svg id="dailyChart" viewBox="0 0 680 220" preserveAspectRatio="xMidYMid meet"></svg>
+        <div class="chart-tooltip" id="dailyTooltip"></div>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-header">
+        <span class="chart-title">Monthly YTD</span>
+        <div class="legend">
+          <div class="legend-item"><span class="legend-line" style="background:var(--c-actual)"></span> Actual</div>
+          <div class="legend-item"><span class="legend-line" style="background:var(--c-budget)"></span> Budget</div>
+          <div class="legend-item"><span class="legend-line" style="background:var(--c-forecast)"></span> Forecast</div>
+        </div>
+      </div>
+      <div class="svg-wrap" id="ytdChartWrap">
+        <svg id="ytdChart" viewBox="0 0 360 220" preserveAspectRatio="xMidYMid meet"></svg>
+        <div class="chart-tooltip" id="ytdTooltip"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dept table -->
+  <div class="table-card">
+    <div class="table-card-header">
+      <span class="table-card-title" id="deptTableTitle">Department Breakdown</span>
+      <span class="table-note">Budget &amp; forecast = ProfitSword non-mgmt hourly. Actual = UKG all types.</span>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="dept-table" id="deptTable"></table>
+    </div>
+  </div>
+
+  <p class="footer-note">
+    Actuals sourced from UKG daily export (all labor types: hourly, salary, contract).
+    Budget and forecast from ProfitSword (non-management hourly only).
+    Rooms and A&G actuals include contract/outsourced labor not reflected in budget.
+    July data through July 29.
+  </p>
+</div>
+
+<script>
+/* ── DATA ──────────────────────────────────────────────────── */
+const DATA = {"chart_daily":[{"d":"2026-01-01","a":2087.3,"b":1106.9,"f":1178.0},{"d":"2026-01-02","a":318.3,"b":1106.9,"f":1178.0},{"d":"2026-01-03","a":322.5,"b":1106.9,"f":1178.0},{"d":"2026-01-04","a":249.7,"b":1106.9,"f":1178.0},{"d":"2026-01-05","a":932.8,"b":1106.9,"f":1178.0},{"d":"2026-01-06","a":1199.0,"b":1106.9,"f":1178.0},{"d":"2026-01-07","a":1737.2,"b":1106.9,"f":1178.0},{"d":"2026-01-08","a":1810.5,"b":1106.9,"f":1178.0},{"d":"2026-01-09","a":1957.0,"b":1106.9,"f":1178.0},{"d":"2026-01-10","a":1635.2,"b":1106.9,"f":1178.0},{"d":"2026-01-11","a":1130.9,"b":1106.9,"f":1178.0},{"d":"2026-01-12","a":1456.0,"b":1106.9,"f":1178.0},{"d":"2026-01-13","a":1698.2,"b":1106.9,"f":1178.0},{"d":"2026-01-14","a":1816.0,"b":1106.9,"f":1178.0},{"d":"2026-01-15","a":1932.8,"b":1106.9,"f":1178.0},{"d":"2026-01-16","a":2045.0,"b":1106.9,"f":1178.0},{"d":"2026-01-17","a":1596.5,"b":1106.9,"f":1178.0},{"d":"2026-01-18","a":1364.5,"b":1106.9,"f":1178.0},{"d":"2026-01-19","a":2962.7,"b":1106.9,"f":1178.0},{"d":"2026-01-20","a":1711.4,"b":1106.9,"f":1178.0},{"d":"2026-01-21","a":1787.4,"b":1106.9,"f":1178.0},{"d":"2026-01-22","a":1954.9,"b":1106.9,"f":1178.0},{"d":"2026-01-23","a":2004.2,"b":1106.9,"f":1178.0},{"d":"2026-01-24","a":1429.7,"b":1106.9,"f":1178.0},{"d":"2026-01-25","a":874.3,"b":1106.9,"f":1178.0},{"d":"2026-01-26","a":1464.1,"b":1106.9,"f":1178.0},{"d":"2026-01-27","a":1693.3,"b":1106.9,"f":1178.0},{"d":"2026-01-28","a":1754.1,"b":1106.9,"f":1178.0},{"d":"2026-01-29","a":1912.9,"b":1106.9,"f":1178.0},{"d":"2026-01-30","a":2072.0,"b":1106.9,"f":1178.0},{"d":"2026-01-31","a":1671.9,"b":1106.9,"f":1178.0},{"d":"2026-02-01","a":1126.9,"b":1360.1,"f":1340.8},{"d":"2026-02-02","a":1423.5,"b":1360.1,"f":1340.8},{"d":"2026-02-03","a":1686.8,"b":1360.1,"f":1340.8},{"d":"2026-02-04","a":1803.2,"b":1360.1,"f":1340.8},{"d":"2026-02-05","a":1938.0,"b":1360.1,"f":1340.8},{"d":"2026-02-06","a":2106.6,"b":1360.1,"f":1340.8},{"d":"2026-02-07","a":1638.8,"b":1360.1,"f":1340.8},{"d":"2026-02-08","a":1116.8,"b":1360.1,"f":1340.8},{"d":"2026-02-09","a":1456.6,"b":1360.1,"f":1340.8},{"d":"2026-02-10","a":1759.5,"b":1360.1,"f":1340.8},{"d":"2026-02-11","a":1721.5,"b":1360.1,"f":1340.8},{"d":"2026-02-12","a":1860.7,"b":1360.1,"f":1340.8},{"d":"2026-02-13","a":2050.4,"b":1360.1,"f":1340.8},{"d":"2026-02-14","a":1704.3,"b":1360.1,"f":1340.8},{"d":"2026-02-15","a":1280.0,"b":1360.1,"f":1340.8},{"d":"2026-02-16","a":2940.7,"b":1360.1,"f":1340.8},{"d":"2026-02-17","a":1640.5,"b":1360.1,"f":1340.8},{"d":"2026-02-18","a":1712.1,"b":1360.1,"f":1340.8},{"d":"2026-02-19","a":1881.7,"b":1360.1,"f":1340.8},{"d":"2026-02-20","a":2108.7,"b":1360.1,"f":1340.8},{"d":"2026-02-21","a":1527.8,"b":1360.1,"f":1340.8},{"d":"2026-02-22","a":1149.3,"b":1360.1,"f":1340.8},{"d":"2026-02-23","a":1475.3,"b":1360.1,"f":1340.8},{"d":"2026-02-24","a":1659.5,"b":1360.1,"f":1340.8},{"d":"2026-02-25","a":1765.1,"b":1360.1,"f":1340.8},{"d":"2026-02-26","a":1874.9,"b":1360.1,"f":1340.8},{"d":"2026-02-27","a":2044.6,"b":1360.1,"f":1340.8},{"d":"2026-02-28","a":1582.7,"b":1360.1,"f":1340.8},{"d":"2026-03-01","a":1142.2,"b":1386.7,"f":1355.2},{"d":"2026-03-02","a":1492.8,"b":1386.7,"f":1355.2},{"d":"2026-03-03","a":1649.3,"b":1386.7,"f":1355.2},{"d":"2026-03-04","a":1761.0,"b":1386.7,"f":1355.2},{"d":"2026-03-05","a":1996.1,"b":1386.7,"f":1355.2},{"d":"2026-03-06","a":2048.6,"b":1386.7,"f":1355.2},{"d":"2026-03-07","a":1483.4,"b":1386.7,"f":1355.2},{"d":"2026-03-08","a":1238.7,"b":1386.7,"f":1355.2},{"d":"2026-03-09","a":1460.9,"b":1386.7,"f":1355.2},{"d":"2026-03-10","a":1703.5,"b":1386.7,"f":1355.2},{"d":"2026-03-11","a":1783.6,"b":1386.7,"f":1355.2},{"d":"2026-03-12","a":1982.8,"b":1386.7,"f":1355.2},{"d":"2026-03-13","a":2180.2,"b":1386.7,"f":1355.2},{"d":"2026-03-14","a":1784.3,"b":1386.7,"f":1355.2},{"d":"2026-03-15","a":1357.0,"b":1386.7,"f":1355.2},{"d":"2026-03-16","a":1612.4,"b":1386.7,"f":1355.2},{"d":"2026-03-17","a":1790.2,"b":1386.7,"f":1355.2},{"d":"2026-03-18","a":1673.0,"b":1386.7,"f":1355.2},{"d":"2026-03-19","a":1852.7,"b":1386.7,"f":1355.2},{"d":"2026-03-20","a":2092.4,"b":1386.7,"f":1355.2},{"d":"2026-03-21","a":1612.5,"b":1386.7,"f":1355.2},{"d":"2026-03-22","a":1239.6,"b":1386.7,"f":1355.2},{"d":"2026-03-23","a":1447.8,"b":1386.7,"f":1355.2},{"d":"2026-03-24","a":1671.0,"b":1386.7,"f":1355.2},{"d":"2026-03-25","a":1887.1,"b":1386.7,"f":1355.2},{"d":"2026-03-26","a":1934.8,"b":1386.7,"f":1355.2},{"d":"2026-03-27","a":2073.0,"b":1386.7,"f":1355.2},{"d":"2026-03-28","a":1594.6,"b":1386.7,"f":1355.2},{"d":"2026-03-29","a":1222.1,"b":1386.7,"f":1355.2},{"d":"2026-03-30","a":1446.5,"b":1386.7,"f":1355.2},{"d":"2026-03-31","a":1711.0,"b":1386.7,"f":1355.2},{"d":"2026-04-01","a":1690.1,"b":1368.2,"f":1806.7},{"d":"2026-04-02","a":1849.9,"b":1368.2,"f":1806.7},{"d":"2026-04-03","a":2076.3,"b":1368.2,"f":1806.7},{"d":"2026-04-04","a":1509.0,"b":1368.2,"f":1806.7},{"d":"2026-04-05","a":1175.8,"b":1368.2,"f":1806.7},{"d":"2026-04-06","a":1380.5,"b":1368.2,"f":1806.7},{"d":"2026-04-07","a":1605.6,"b":1368.2,"f":1806.7},{"d":"2026-04-08","a":1736.8,"b":1368.2,"f":1806.7},{"d":"2026-04-09","a":1812.1,"b":1368.2,"f":1806.7},{"d":"2026-04-10","a":2061.1,"b":1368.2,"f":1806.7},{"d":"2026-04-11","a":1572.9,"b":1368.2,"f":1806.7},{"d":"2026-04-12","a":1124.8,"b":1368.2,"f":1806.7},{"d":"2026-04-13","a":1439.1,"b":1368.2,"f":1806.7},{"d":"2026-04-14","a":1664.5,"b":1368.2,"f":1806.7},{"d":"2026-04-15","a":1808.6,"b":1368.2,"f":1806.7},{"d":"2026-04-16","a":1921.7,"b":1368.2,"f":1806.7},{"d":"2026-04-17","a":2139.1,"b":1368.2,"f":1806.7},{"d":"2026-04-18","a":1542.3,"b":1368.2,"f":1806.7},{"d":"2026-04-19","a":1187.3,"b":1368.2,"f":1806.7},{"d":"2026-04-20","a":1496.3,"b":1368.2,"f":1806.7},{"d":"2026-04-21","a":1623.8,"b":1368.2,"f":1806.7},{"d":"2026-04-22","a":1729.6,"b":1368.2,"f":1806.7},{"d":"2026-04-23","a":1987.9,"b":1368.2,"f":1806.7},{"d":"2026-04-24","a":2176.7,"b":1368.2,"f":1806.7},{"d":"2026-04-25","a":1650.5,"b":1368.2,"f":1806.7},{"d":"2026-04-26","a":1314.5,"b":1368.2,"f":1806.7},{"d":"2026-04-27","a":1560.8,"b":1368.2,"f":1806.7},{"d":"2026-04-28","a":1794.7,"b":1368.2,"f":1806.7},{"d":"2026-04-29","a":1736.3,"b":1368.2,"f":1806.7},{"d":"2026-04-30","a":1906.9,"b":1368.2,"f":1806.7},{"d":"2026-05-01","a":2220.1,"b":1418.3,"f":1725.1},{"d":"2026-05-02","a":1744.6,"b":1418.3,"f":1725.1},{"d":"2026-05-03","a":1226.6,"b":1418.3,"f":1725.1},{"d":"2026-05-04","a":1466.1,"b":1418.3,"f":1725.1},{"d":"2026-05-05","a":1677.6,"b":1418.3,"f":1725.1},{"d":"2026-05-06","a":1719.7,"b":1418.3,"f":1725.1},{"d":"2026-05-07","a":1802.3,"b":1418.3,"f":1725.1},{"d":"2026-05-08","a":2139.5,"b":1418.3,"f":1725.1},{"d":"2026-05-09","a":1654.8,"b":1418.3,"f":1725.1},{"d":"2026-05-10","a":1363.4,"b":1418.3,"f":1725.1},{"d":"2026-05-11","a":1426.8,"b":1418.3,"f":1725.1},{"d":"2026-05-12","a":1583.4,"b":1418.3,"f":1725.1},{"d":"2026-05-13","a":1753.3,"b":1418.3,"f":1725.1},{"d":"2026-05-14","a":1830.5,"b":1418.3,"f":1725.1},{"d":"2026-05-15","a":1967.7,"b":1418.3,"f":1725.1},{"d":"2026-05-16","a":1713.0,"b":1418.3,"f":1725.1},{"d":"2026-05-17","a":1224.4,"b":1418.3,"f":1725.1},{"d":"2026-05-18","a":1356.0,"b":1418.3,"f":1725.1},{"d":"2026-05-19","a":1597.6,"b":1418.3,"f":1725.1},{"d":"2026-05-20","a":1676.4,"b":1418.3,"f":1725.1},{"d":"2026-05-21","a":1817.9,"b":1418.3,"f":1725.1},{"d":"2026-05-22","a":2022.9,"b":1418.3,"f":1725.1},{"d":"2026-05-23","a":1673.9,"b":1418.3,"f":1725.1},{"d":"2026-05-24","a":1338.6,"b":1418.3,"f":1725.1},{"d":"2026-05-25","a":3146.6,"b":1418.3,"f":1725.1},{"d":"2026-05-26","a":1556.1,"b":1418.3,"f":1725.1},{"d":"2026-05-27","a":1677.3,"b":1418.3,"f":1725.1},{"d":"2026-05-28","a":1837.9,"b":1418.3,"f":1725.1},{"d":"2026-05-29","a":1990.0,"b":1418.3,"f":1725.1},{"d":"2026-05-30","a":1627.3,"b":1418.3,"f":1725.1},{"d":"2026-05-31","a":1220.4,"b":1418.3,"f":1725.1},{"d":"2026-06-01","a":1462.4,"b":1249.7,"f":1182.8},{"d":"2026-06-02","a":1634.0,"b":1249.7,"f":1182.8},{"d":"2026-06-03","a":1755.5,"b":1249.7,"f":1182.8},{"d":"2026-06-04","a":1640.9,"b":1249.7,"f":1182.8},{"d":"2026-06-05","a":1927.6,"b":1249.7,"f":1182.8},{"d":"2026-06-06","a":1591.3,"b":1249.7,"f":1182.8},{"d":"2026-06-07","a":1232.1,"b":1249.7,"f":1182.8},{"d":"2026-06-08","a":1428.8,"b":1249.7,"f":1182.8},{"d":"2026-06-09","a":1654.0,"b":1249.7,"f":1182.8},{"d":"2026-06-10","a":1646.7,"b":1249.7,"f":1182.8},{"d":"2026-06-11","a":1847.5,"b":1249.7,"f":1182.8},{"d":"2026-06-12","a":2012.1,"b":1249.7,"f":1182.8},{"d":"2026-06-13","a":1597.5,"b":1249.7,"f":1182.8},{"d":"2026-06-14","a":1212.0,"b":1249.7,"f":1182.8},{"d":"2026-06-15","a":1366.6,"b":1249.7,"f":1182.8},{"d":"2026-06-16","a":1487.8,"b":1249.7,"f":1182.8},{"d":"2026-06-17","a":1678.9,"b":1249.7,"f":1182.8},{"d":"2026-06-18","a":1803.7,"b":1249.7,"f":1182.8},{"d":"2026-06-19","a":3396.0,"b":1249.7,"f":1182.8},{"d":"2026-06-20","a":1730.9,"b":1249.7,"f":1182.8},{"d":"2026-06-21","a":1316.0,"b":1249.7,"f":1182.8},{"d":"2026-06-22","a":1353.8,"b":1249.7,"f":1182.8},{"d":"2026-06-23","a":1595.5,"b":1249.7,"f":1182.8},{"d":"2026-06-24","a":1586.8,"b":1249.7,"f":1182.8},{"d":"2026-06-25","a":1675.6,"b":1249.7,"f":1182.8},{"d":"2026-06-26","a":1953.7,"b":1249.7,"f":1182.8},{"d":"2026-06-27","a":1667.6,"b":1249.7,"f":1182.8},{"d":"2026-06-28","a":1204.1,"b":1249.7,"f":1182.8},{"d":"2026-06-29","a":1323.9,"b":1249.7,"f":1182.8},{"d":"2026-06-30","a":1480.7,"b":1249.7,"f":1182.8},{"d":"2026-07-01","a":1499.9,"b":1073.2,"f":990.3},{"d":"2026-07-02","a":1646.2,"b":1073.2,"f":990.3},{"d":"2026-07-03","a":1886.6,"b":1073.2,"f":990.3},{"d":"2026-07-04","a":1545.1,"b":1073.2,"f":990.3},{"d":"2026-07-05","a":1164.3,"b":1073.2,"f":990.3},{"d":"2026-07-06","a":1287.2,"b":1073.2,"f":990.3},{"d":"2026-07-07","a":1491.5,"b":1073.2,"f":990.3},{"d":"2026-07-08","a":199.5,"b":1073.2,"f":990.3},{"d":"2026-07-10","a":776.9,"b":1073.2,"f":990.3},{"d":"2026-07-11","a":831.1,"b":1073.2,"f":990.3},{"d":"2026-07-12","a":858.5,"b":1073.2,"f":990.3},{"d":"2026-07-13","a":1168.4,"b":1073.2,"f":990.3},{"d":"2026-07-14","a":1303.1,"b":1073.2,"f":990.3},{"d":"2026-07-15","a":1383.4,"b":1073.2,"f":990.3},{"d":"2026-07-16","a":1518.6,"b":1073.2,"f":990.3},{"d":"2026-07-17","a":1655.2,"b":1073.2,"f":990.3},{"d":"2026-07-18","a":1341.6,"b":1073.2,"f":990.3},{"d":"2026-07-19","a":973.6,"b":1073.2,"f":990.3},{"d":"2026-07-20","a":1169.2,"b":1073.2,"f":990.3},{"d":"2026-07-21","a":1356.4,"b":1073.2,"f":990.3},{"d":"2026-07-22","a":1511.5,"b":1073.2,"f":990.3},{"d":"2026-07-23","a":1549.6,"b":1073.2,"f":990.3},{"d":"2026-07-24","a":1676.1,"b":1073.2,"f":990.3},{"d":"2026-07-25","a":1240.7,"b":1073.2,"f":990.3},{"d":"2026-07-26","a":940.9,"b":1073.2,"f":990.3},{"d":"2026-07-27","a":1181.0,"b":1073.2,"f":990.3},{"d":"2026-07-28","a":1381.9,"b":1073.2,"f":990.3},{"d":"2026-07-29","a":1467.9,"b":1073.2,"f":990.3}],"month_summary":{"2026-01":{"label":"Jan","actual":48582.4,"budget":34313.6,"forecast":36518.0},"2026-02":{"label":"Feb","actual":48036.5,"budget":38081.6,"forecast":37541.3},"2026-03":{"label":"Mar","actual":51925.3,"budget":42986.2,"forecast":42010.7},"2026-04":{"label":"Apr","actual":50275.6,"budget":41044.5,"forecast":54201.0},"2026-05":{"label":"May","actual":53052.8,"budget":43967.3,"forecast":53478.4},"2026-06":{"label":"Jun","actual":49264.1,"budget":37491.9,"forecast":35484.1},"2026-07":{"label":"Jul","actual":36005.8,"budget":33269.7,"forecast":30699.8},"2026-08":{"label":"Aug","actual":0,"budget":33490.1,"forecast":34097.0}},"dept_monthly":{"2026-01":{"Rooms":{"actual":10601.3,"budget":7749.5,"forecast":7544.3},"F&B":{"actual":27535.4,"budget":22222.9,"forecast":23992.4},"Spa":{"actual":2059.2,"budget":1786.4,"forecast":1620.1},"Engineering":{"actual":2540.4,"budget":1280.0,"forecast":1590.0},"Sales & Marketing":{"actual":1696.0,"budget":0,"forecast":0},"A&G":{"actual":3384.3,"budget":456.0,"forecast":571.2}},"2026-02":{"Rooms":{"actual":9984.8,"budget":7198.4,"forecast":8401.4},"F&B":{"actual":28239.0,"budget":26542.5,"forecast":24388.9},"Spa":{"actual":2078.3,"budget":1877.4,"forecast":1913.4},"Engineering":{"actual":2167.9,"budget":1280.0,"forecast":1415.8},"Sales & Marketing":{"actual":1768.0,"budget":0,"forecast":0},"A&G":{"actual":3153.7,"budget":432.0,"forecast":508.6}},"2026-03":{"Rooms":{"actual":10713.9,"budget":8053.0,"forecast":8701.5},"F&B":{"actual":30247.2,"budget":30260.6,"forecast":28347.6},"Spa":{"actual":2318.5,"budget":2046.2,"forecast":1995.1},"Engineering":{"actual":2319.2,"budget":1280.0,"forecast":1633.2},"Sales & Marketing":{"actual":1928.0,"budget":0.0,"forecast":0.0},"A&G":{"actual":3806.4,"budget":504.0,"forecast":579.4}},"2026-04":{"Rooms":{"actual":10210.5,"budget":8565.9,"forecast":7621.8},"F&B":{"actual":29513.8,"budget":28022.4,"forecast":39784.8},"Spa":{"actual":2180.0,"budget":1821.0,"forecast":2242.6},"Engineering":{"actual":2138.1,"budget":1280.0,"forecast":2049.3},"Sales & Marketing":{"actual":1760.0,"budget":0.0,"forecast":0.0},"A&G":{"actual":3870.5,"budget":528.0,"forecast":874.0}},"2026-05":{"Rooms":{"actual":10719.0,"budget":8429.1,"forecast":9373.9},"F&B":{"actual":31623.6,"budget":30924.7,"forecast":38003.7},"Spa":{"actual":2481.5,"budget":1881.0,"forecast":2353.8},"Engineering":{"actual":2087.9,"budget":1440.0,"forecast":1392.2},"Sales & Marketing":{"actual":1640.0,"budget":0.0,"forecast":0.0},"A&G":{"actual":3914.7,"budget":456.0,"forecast":823.2}},"2026-06":{"Rooms":{"actual":10219.8,"budget":7335.3,"forecast":8258.7},"F&B":{"actual":28618.6,"budget":25543.6,"forecast":21757.4},"Spa":{"actual":2150.9,"budget":1922.0,"forecast":2047.0},"Engineering":{"actual":2247.6,"budget":1440.0,"forecast":1800.0},"Sales & Marketing":{"actual":1520.0,"budget":0,"forecast":0},"A&G":{"actual":3959.0,"budget":480.0,"forecast":580.0}},"2026-07":{"Rooms":{"actual":4354.9,"budget":7194.0,"forecast":6600.4},"F&B":{"actual":24478.9,"budget":21659.8,"forecast":19018.5},"Spa":{"actual":1381.9,"budget":1693.4,"forecast":1932.4},"Engineering":{"actual":1674.9,"budget":1440.0,"forecast":1504.0},"Sales & Marketing":{"actual":1408.0,"budget":0,"forecast":0},"A&G":{"actual":2434.9,"budget":504.0,"forecast":602.0}},"2026-08":{"Rooms":{"actual":0,"budget":7287.1,"forecast":7819.5},"F&B":{"actual":0,"budget":21728.6,"forecast":20895.9},"Spa":{"actual":0,"budget":1767.4,"forecast":1856.8},"Engineering":{"actual":0,"budget":1440.0,"forecast":1856.0},"Sales & Marketing":{"actual":0,"budget":0,"forecast":0},"A&G":{"actual":0,"budget":480.0,"forecast":594.0}}}};
+
+const DEPT_ORDER = ['Rooms','F&B','Spa','Engineering','Sales & Marketing','A&G'];
+const MONTHS = [
+  {ym:'2026-01',label:'Jan'},
+  {ym:'2026-02',label:'Feb'},
+  {ym:'2026-03',label:'Mar'},
+  {ym:'2026-04',label:'Apr'},
+  {ym:'2026-05',label:'May'},
+  {ym:'2026-06',label:'Jun'},
+  {ym:'2026-07',label:'Jul'},
+  {ym:'2026-08',label:'Aug'},
+];
+
+let selectedMonth = '2026-07';
+const CURRENT_MONTH = '2026-07';
+
+/* ── Helpers ─────────────────────────────────────────── */
+function fmt(n, dec=0) {
+  if (n === null || n === undefined) return '—';
+  return n.toLocaleString('en-US', {minimumFractionDigits: dec, maximumFractionDigits: dec});
+}
+function fmtK(n) {
+  if (Math.abs(n) >= 1000) return (n/1000).toFixed(1) + 'k';
+  return fmt(n);
+}
+function sign(n) { return n > 0 ? '+' : ''; }
+
+function getCSSVar(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+/* ── SVG helpers ─────────────────────────────────────── */
+function svgEl(tag, attrs={}) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  Object.entries(attrs).forEach(([k,v]) => el.setAttribute(k, v));
+  return el;
+}
+function svgText(x, y, content, attrs={}) {
+  const el = svgEl('text', {x, y, ...attrs});
+  el.textContent = content;
+  return el;
+}
+
+/* ── Month tabs ─────────────────────────────────────── */
+function renderMonthTabs() {
+  const bar = document.getElementById('monthBar');
+  bar.innerHTML = '';
+  MONTHS.forEach(({ym, label}) => {
+    const btn = document.createElement('button');
+    btn.className = 'month-tab' + (ym === selectedMonth ? ' active' : '') + (ym > CURRENT_MONTH ? ' future' : '');
+    btn.textContent = label;
+    if (ym <= CURRENT_MONTH) {
+      btn.onclick = () => { selectedMonth = ym; renderAll(); };
+    }
+    bar.appendChild(btn);
+  });
+}
+
+/* ── KPI row ─────────────────────────────────────────── */
+function renderKPIs() {
+  const ms = DATA.month_summary[selectedMonth];
+  const isFuture = selectedMonth > CURRENT_MONTH;
+  const row = document.getElementById('kpiRow');
+  const mLabel = MONTHS.find(m=>m.ym===selectedMonth)?.label || selectedMonth;
+
+  const actual = ms.actual;
+  const budget = ms.budget;
+  const forecast = ms.forecast;
+  const varHrs = actual - budget;
+  const varPct = budget ? ((actual - budget) / budget * 100) : null;
+
+  const varClass = isFuture ? 'neutral' : (varHrs > 0 ? 'over-budget' : 'under-budget');
+  const varColor = isFuture ? 'var(--ink-3)' : (varHrs > 0 ? 'var(--bad)' : 'var(--good)');
+  const varBgClass = isFuture ? 'var-flat' : (varHrs > 0 ? 'var-over' : 'var-under');
+
+  row.innerHTML = `
+    <div class="kpi-card neutral">
+      <div class="kpi-label"><span class="kpi-dot" style="background:var(--c-actual)"></span>Actual Hours</div>
+      <div class="kpi-value">${isFuture ? '—' : fmt(actual)}</div>
+      <div class="kpi-sub">${mLabel} total</div>
+    </div>
+    <div class="kpi-card neutral">
+      <div class="kpi-label"><span class="kpi-dot" style="background:var(--c-budget)"></span>Budget Hours</div>
+      <div class="kpi-value">${fmt(budget)}</div>
+      <div class="kpi-sub">${mLabel} total</div>
+    </div>
+    <div class="kpi-card neutral">
+      <div class="kpi-label"><span class="kpi-dot" style="background:var(--c-forecast)"></span>Forecast Hours</div>
+      <div class="kpi-value">${fmt(forecast)}</div>
+      <div class="kpi-sub">${mLabel} total</div>
+    </div>
+    <div class="kpi-card ${varClass}">
+      <div class="kpi-label">Variance vs Budget</div>
+      <div class="kpi-value" style="color:${varColor}">${isFuture ? '—' : (sign(varHrs)+fmt(varHrs))}</div>
+      <div class="kpi-sub">${isFuture ? 'No actuals yet' : (varPct !== null ? sign(varPct)+varPct.toFixed(1)+'% vs budget' : '—')}</div>
+    </div>
+  `;
+}
+
+/* ── Daily line chart ────────────────────────────────── */
+function renderDailyChart() {
+  const svg = document.getElementById('dailyChart');
+  const wrap = document.getElementById('dailyChartWrap');
+  const tooltip = document.getElementById('dailyTooltip');
+  svg.innerHTML = '';
+
+  const days = DATA.chart_daily.filter(d => d.d.startsWith(selectedMonth));
+  document.getElementById('dailyChartTitle').textContent =
+    'Daily Hours — ' + (MONTHS.find(m=>m.ym===selectedMonth)?.label||'') + ' 2026';
+
+  if (!days.length) {
+    svg.appendChild(svgText(340, 110, 'No data for this period', {
+      fill:'var(--ink-3)', 'text-anchor':'middle', 'font-size':'13'
+    }));
+    return;
+  }
+
+  // Layout
+  const W=680, H=220, pad={t:20,r:14,b:38,l:54};
+  const pw = W - pad.l - pad.r;
+  const ph = H - pad.t - pad.b;
+
+  // Scale
+  const maxA = Math.max(...days.map(d=>d.a), days[0].b*1.2, days[0].f*1.2);
+  const yMax = Math.ceil(maxA/500)*500;
+  const yMin = 0;
+
+  function xPos(i) { return pad.l + (i / (days.length-1||1)) * pw; }
+  function yPos(v) { return pad.t + ph * (1 - (v - yMin)/(yMax - yMin)); }
+
+  // Grid lines
+  const yTicks = [0, yMax*0.25, yMax*0.5, yMax*0.75, yMax].map(v=>Math.round(v/250)*250);
+  yTicks.forEach(v => {
+    const y = yPos(v);
+    const line = svgEl('line', {x1:pad.l, y1:y, x2:W-pad.r, y2:y,
+      stroke:'var(--rule)', 'stroke-width':'1'});
+    svg.appendChild(line);
+    const lbl = svgText(pad.l-6, y+4, fmtK(v), {
+      fill:'var(--ink-3)', 'text-anchor':'end', 'font-size':'10', 'font-family':'system-ui'
+    });
+    svg.appendChild(lbl);
+  });
+
+  // X axis labels (week markers)
+  days.forEach((d, i) => {
+    const day = parseInt(d.d.split('-')[2]);
+    if (day === 1 || day % 7 === 1) {
+      const x = xPos(i);
+      const lbl = svgText(x, H-pad.b+14, day.toString(), {
+        fill:'var(--ink-3)', 'text-anchor':'middle', 'font-size':'10', 'font-family':'system-ui'
+      });
+      svg.appendChild(lbl);
+      const tick = svgEl('line', {x1:x,y1:pad.t+ph,x2:x,y2:pad.t+ph+4,
+        stroke:'var(--rule-strong)','stroke-width':'1'});
+      svg.appendChild(tick);
+    }
+  });
+
+  // Axis labels
+  svg.appendChild(svgText(pad.l-6, pad.t-8, 'hrs', {fill:'var(--ink-3)','font-size':'10','text-anchor':'end'}));
+
+  // Baseline
+  const baseline = svgEl('line', {x1:pad.l, y1:pad.t+ph, x2:W-pad.r, y2:pad.t+ph,
+    stroke:'var(--rule-strong)', 'stroke-width':'1'});
+  svg.appendChild(baseline);
+
+  // Budget dashed line
+  const bY = yPos(days[0].b);
+  const budLine = svgEl('line', {x1:pad.l, y1:bY, x2:W-pad.r, y2:bY,
+    stroke:'var(--c-budget)', 'stroke-width':'1.5', 'stroke-dasharray':'5,4', opacity:'0.8'});
+  svg.appendChild(budLine);
+
+  // Forecast dashed line
+  const fY = yPos(days[0].f);
+  const fcLine = svgEl('line', {x1:pad.l, y1:fY, x2:W-pad.r, y2:fY,
+    stroke:'var(--c-forecast)', 'stroke-width':'1.5', 'stroke-dasharray':'5,4', opacity:'0.8'});
+  svg.appendChild(fcLine);
+
+  // Actual area fill
+  const areaPoints = days.map((d,i)=>`${xPos(i)},${yPos(d.a)}`).join(' ');
+  const areaPath = [
+    `M ${xPos(0)},${yPos(days[0].a)}`,
+    ...days.slice(1).map((d,i)=>`L ${xPos(i+1)},${yPos(d.a)}`),
+    `L ${xPos(days.length-1)},${yPos(0)}`,
+    `L ${xPos(0)},${yPos(0)}`,
+    'Z'
+  ].join(' ');
+  const area = svgEl('path', {d:areaPath, fill:'var(--c-actual)', opacity:'0.08'});
+  svg.appendChild(area);
+
+  // Actual line
+  const linePoints = days.map((d,i)=>`${xPos(i)},${yPos(d.a)}`).join(' ');
+  const line = svgEl('polyline', {
+    points: linePoints,
+    fill:'none', stroke:'var(--c-actual)', 'stroke-width':'1.8', 'stroke-linejoin':'round',
+    'stroke-linecap':'round'
+  });
+  svg.appendChild(line);
+
+  // Hit area + crosshair + tooltip
+  const crossV = svgEl('line', {x1:0,y1:pad.t,x2:0,y2:pad.t+ph,
+    stroke:'var(--rule-strong)','stroke-width':'1',opacity:'0',
+    style:'pointer-events:none'});
+  svg.appendChild(crossV);
+
+  const hitArea = svgEl('rect', {
+    x:pad.l, y:pad.t, width:pw, height:ph,
+    fill:'transparent', style:'cursor:crosshair'
+  });
+  svg.appendChild(hitArea);
+
+  hitArea.addEventListener('mousemove', (e) => {
+    const rect = svg.getBoundingClientRect();
+    const scaleX = W / rect.width;
+    const mx = (e.clientX - rect.left) * scaleX;
+    const relX = mx - pad.l;
+    const idx = Math.max(0, Math.min(days.length-1, Math.round(relX / pw * (days.length-1))));
+    const d = days[idx];
+    if (!d) return;
+
+    const cx = xPos(idx);
+    crossV.setAttribute('x1', cx); crossV.setAttribute('x2', cx);
+    crossV.setAttribute('opacity', '0.6');
+
+    const pct = ((d.a - d.b) / d.b * 100);
+    const date = new Date(d.d + 'T12:00:00');
+    const dateStr = date.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+
+    tooltip.innerHTML = `
+      <div class="tt-date">${dateStr}</div>
+      <div class="tt-row"><span class="tt-swatch" style="background:var(--c-actual)"></span>Actual<span class="tt-val">${fmt(d.a)} hrs</span></div>
+      <div class="tt-row"><span class="tt-swatch" style="background:var(--c-budget)"></span>Budget/day<span class="tt-val">${fmt(d.b)} hrs</span></div>
+      <div class="tt-row"><span class="tt-swatch" style="background:var(--c-forecast)"></span>Forecast/day<span class="tt-val">${fmt(d.f)} hrs</span></div>
+      <div class="tt-row" style="margin-top:3px;border-top:1px solid var(--rule);padding-top:3px">
+        <span style="color:var(--ink-3)">vs budget</span>
+        <span class="tt-val" style="color:${pct>0?'var(--bad)':'var(--good)'}">${sign(pct)}${pct.toFixed(1)}%</span>
+      </div>
+    `;
+    tooltip.style.opacity = '1';
+
+    const ttW = 190;
+    let ttX = (cx/W)*rect.width + rect.left - wrap.getBoundingClientRect().left + 10;
+    if (ttX + ttW > wrap.offsetWidth) ttX -= ttW + 20;
+    tooltip.style.left = ttX + 'px';
+    tooltip.style.top = '10px';
+  });
+  hitArea.addEventListener('mouseleave', () => {
+    tooltip.style.opacity = '0';
+    crossV.setAttribute('opacity','0');
+  });
+}
+
+/* ── YTD grouped bar chart ───────────────────────────── */
+function renderYTDChart() {
+  const svg = document.getElementById('ytdChart');
+  const wrap = document.getElementById('ytdChartWrap');
+  const tooltip = document.getElementById('ytdTooltip');
+  svg.innerHTML = '';
+
+  const W=360, H=220, pad={t:20,r:10,b:38,l:48};
+  const pw = W - pad.l - pad.r;
+  const ph = H - pad.t - pad.b;
+
+  const mKeys = Object.keys(DATA.month_summary);
+  const maxVal = Math.max(...mKeys.map(k=>{
+    const m = DATA.month_summary[k];
+    return Math.max(m.actual||0, m.budget||0, m.forecast||0);
+  }));
+  const yMax = Math.ceil(maxVal/10000)*10000;
+
+  function yPos(v) { return pad.t + ph * (1 - v/yMax); }
+
+  // Grid
+  [0,yMax*0.25,yMax*0.5,yMax*0.75,yMax].forEach(v=>{
+    const y = yPos(v);
+    svg.appendChild(svgEl('line',{x1:pad.l,y1:y,x2:W-pad.r,y2:y,stroke:'var(--rule)','stroke-width':'1'}));
+    svg.appendChild(svgText(pad.l-4, y+3, (v/1000).toFixed(0)+'k', {
+      fill:'var(--ink-3)','text-anchor':'end','font-size':'9','font-family':'system-ui'
+    }));
+  });
+  // Baseline
+  svg.appendChild(svgEl('line',{x1:pad.l,y1:pad.t+ph,x2:W-pad.r,y2:pad.t+ph,
+    stroke:'var(--rule-strong)','stroke-width':'1'}));
+
+  const groupW = pw / mKeys.length;
+  const BAR_W = Math.floor(groupW * 0.22);
+  const GAP = 1;
+
+  mKeys.forEach((ym, gi) => {
+    const m = DATA.month_summary[ym];
+    const isFuture = ym > CURRENT_MONTH;
+    const isSelected = ym === selectedMonth;
+    const cx = pad.l + gi * groupW + groupW/2;
+
+    // Background for selected month
+    if (isSelected) {
+      svg.appendChild(svgEl('rect',{
+        x:pad.l+gi*groupW+2, y:pad.t, width:groupW-4, height:ph,
+        fill:'var(--surface-inset)', rx:'3'
+      }));
+    }
+
+    // Three bars: actual, budget, forecast
+    const series = [
+      {val:m.actual, color:'var(--c-actual)', label:'Actual'},
+      {val:m.budget, color:'var(--c-budget)', label:'Budget'},
+      {val:m.forecast, color:'var(--c-forecast)', label:'Forecast'},
+    ];
+
+    const totalBarsW = 3*BAR_W + 2*GAP;
+    const startX = cx - totalBarsW/2;
+
+    series.forEach(({val, color, label}, si) => {
+      if (!val) return;
+      const bx = startX + si*(BAR_W+GAP);
+      const by = yPos(val);
+      const bh = pad.t + ph - by;
+      const bar = svgEl('rect', {
+        x:bx, y:by, width:BAR_W, height:bh,
+        fill:color, opacity: isFuture ? '0.4' : '1', rx:'2'
+      });
+      svg.appendChild(bar);
+    });
+
+    // X label
+    svg.appendChild(svgText(cx, H-pad.b+13, m.label, {
+      fill: isSelected ? 'var(--ink-1)' : 'var(--ink-3)',
+      'text-anchor':'middle','font-size':'10','font-family':'system-ui',
+      'font-weight': isSelected ? '600':'400'
+    }));
+
+    // Hit zone
+    const hit = svgEl('rect',{
+      x:pad.l+gi*groupW, y:pad.t, width:groupW, height:ph+10,
+      fill:'transparent', style:'cursor:pointer'
+    });
+    svg.appendChild(hit);
+    hit.addEventListener('mouseenter', (e) => {
+      const varHrs = m.actual - m.budget;
+      const varPct = m.budget ? (varHrs/m.budget*100) : null;
+      tooltip.innerHTML = `
+        <div class="tt-date">${m.label} 2026${isFuture?' (future)':''}</div>
+        <div class="tt-row"><span class="tt-swatch" style="background:var(--c-actual)"></span>Actual<span class="tt-val">${isFuture?'—':fmt(m.actual)} hrs</span></div>
+        <div class="tt-row"><span class="tt-swatch" style="background:var(--c-budget)"></span>Budget<span class="tt-val">${fmt(m.budget)} hrs</span></div>
+        <div class="tt-row"><span class="tt-swatch" style="background:var(--c-forecast)"></span>Forecast<span class="tt-val">${fmt(m.forecast)} hrs</span></div>
+        ${!isFuture && varPct !== null ? `<div class="tt-row" style="margin-top:3px;border-top:1px solid var(--rule);padding-top:3px">
+          <span style="color:var(--ink-3)">vs budget</span>
+          <span class="tt-val" style="color:${varHrs>0?'var(--bad)':'var(--good)'}">${sign(varHrs)}${fmt(varHrs)} (${sign(varPct)}${varPct.toFixed(1)}%)</span>
+        </div>`:''}
+      `;
+      tooltip.style.opacity = '1';
+      const wRect = wrap.getBoundingClientRect();
+      const eRect = e.target.getBoundingClientRect();
+      let ttL = eRect.left - wRect.left + (gi < 4 ? 16 : -200);
+      tooltip.style.left = Math.max(0,ttL) + 'px';
+      tooltip.style.top = '10px';
+    });
+    hit.addEventListener('click', () => {
+      if (ym <= CURRENT_MONTH) { selectedMonth = ym; renderAll(); }
+    });
+    hit.addEventListener('mouseleave', () => tooltip.style.opacity = '0');
+  });
+}
+
+/* ── Dept table ──────────────────────────────────────── */
+function renderDeptTable() {
+  const depts = DATA.dept_monthly[selectedMonth] || {};
+  const mLabel = MONTHS.find(m=>m.ym===selectedMonth)?.label || selectedMonth;
+  const isFuture = selectedMonth > CURRENT_MONTH;
+
+  document.getElementById('deptTableTitle').textContent = `Department Breakdown — ${mLabel} 2026`;
+
+  const table = document.getElementById('deptTable');
+  const maxActual = Math.max(...DEPT_ORDER.map(d=>(depts[d]?.actual||0)));
+
+  table.innerHTML = `
+    <thead>
+      <tr>
+        <th>Department</th>
+        <th>Actual Hrs</th>
+        <th>Budget Hrs</th>
+        <th>Forecast Hrs</th>
+        <th>vs Budget</th>
+        <th style="min-width:120px">Distribution</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${DEPT_ORDER.map(dept => {
+        const d = depts[dept] || {actual:0,budget:0,forecast:0};
+        const varHrs = d.actual - d.budget;
+        const varPct = d.budget ? (varHrs/d.budget*100) : null;
+        const hasBudget = d.budget > 0;
+        const barPct = maxActual ? (d.actual/maxActual*100) : 0;
+
+        let varCell = '';
+        if (isFuture || !d.actual) {
+          varCell = `<span class="var-pill var-flat">—</span>`;
+        } else if (!hasBudget) {
+          varCell = `<span class="var-pill var-flat">No budget</span>`;
+        } else if (varHrs > 0) {
+          varCell = `<span class="var-pill var-over">+${fmt(varHrs)} (${varPct?.toFixed(1)}%)</span>`;
+        } else {
+          varCell = `<span class="var-pill var-under">${fmt(varHrs)} (${varPct?.toFixed(1)}%)</span>`;
+        }
+
+        return `<tr>
+          <td>${dept}</td>
+          <td>${isFuture ? '—' : fmt(d.actual)}</td>
+          <td>${hasBudget ? fmt(d.budget) : '<span class="no-budget">—</span>'}</td>
+          <td>${d.forecast > 0 ? fmt(d.forecast) : '<span class="no-budget">—</span>'}</td>
+          <td>${varCell}</td>
+          <td>
+            <div class="bar-wrap">
+              <div class="bar-track">
+                <div class="bar-fill" style="width:${barPct}%"></div>
+              </div>
+              <span style="font-size:11px;color:var(--ink-3);min-width:32px;text-align:right">${isFuture?'—':fmtK(d.actual)}</span>
+            </div>
+          </td>
+        </tr>`;
+      }).join('')}
+    </tbody>
+  `;
+}
+
+/* ── Theme toggle ────────────────────────────────────── */
+function toggleTheme() {
+  const root = document.documentElement;
+  const current = root.getAttribute('data-theme');
+  const isDark = current === 'dark' ||
+    (!current && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  root.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  renderDailyChart(); // SVG uses CSS vars, needs redraw
+  renderYTDChart();
+}
+
+/* ── Render all ──────────────────────────────────────── */
+function renderAll() {
+  renderMonthTabs();
+  renderKPIs();
+  renderDailyChart();
+  renderYTDChart();
+  renderDeptTable();
+}
+
+/* ── Init ────────────────────────────────────────────── */
+document.getElementById('lastUpdated').textContent = 'As of July 29, 2026';
+renderAll();
+
+// Re-render charts on resize for responsiveness
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => { renderDailyChart(); renderYTDChart(); }, 150);
+});
+</script>
